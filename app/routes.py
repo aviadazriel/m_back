@@ -26,6 +26,7 @@ def get_item(item_id):
 @main.route('/items', methods=['POST'])
 def create_item():
     data = request.json
+    print(request)
     new_item = Item(name=data['name'], description=data.get('description'))
     db.session.add(new_item)
     db.session.commit()
