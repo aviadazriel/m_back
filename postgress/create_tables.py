@@ -19,3 +19,37 @@ VALUES
     ('johndoe', 'john.doe@example.com','0522257283', 'hashed_password_1', 'John', 'Doe', 'https://example.com/johndoe.jpg', TRUE, FALSE),
     ('janedoe', 'jane.doe@example.com','0522257284', 'hashed_password_2', 'Jane', 'Doe', 'https://example.com/janedoe.jpg', TRUE, TRUE);
 """
+articles = """
+CREATE TABLE articles (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    published_date DATE NOT NULL,
+    related_articles INT[],
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+insert_articles = """
+INSERT INTO articles (title, description, image_url, published_date, related_articles)
+VALUES
+('סוגי ריביות, יתרונות וחסרונות',
+ 'במאמר זה נעמיק ביתרונות והחסרונות של כל סוג ריבית...',
+ 'https://www.sarit-lari.co.il/wp-content/uploads/2024/04/A-mortgage-for-any-purpose.png',
+ '2024-01-08',
+ ARRAY[2, 5, 6]),
+('עמלת פירעון מוקדם',
+ 'מתכננים לסגור את המשכנתא מוקדם? לפני שאתם מתחילים...',
+ 'https://www.taxfinance.co.il/wp-content/uploads/2021/11/%D7%94%D7%97%D7%96%D7%A8-%D7%9E%D7%A1-%D7%9E%D7%A9%D7%9B%D7%A0%D7%AA%D7%90.jpg',
+ '2024-01-11',
+ ARRAY[1, 2, 3]),
+('רכישת דירה ראשונה',
+ 'רכישת דירה ראשונה היא צעד מרגש, אך כרוך באתגרים כלכליים...',
+ 'https://www.hon.co.il/wp-content/uploads/2011/11/%D7%9E%D7%93%D7%A8%D7%99%D7%9B%D7%99-%D7%9E%D7%A9%D7%9B%D7%A0%D7%AA%D7%90%D7%95%D7%AA-55x55-1.jpg',
+ '2024-01-15',
+ ARRAY[1, 2, 3]);
+-- Add remaining articles similarly
+
+"""

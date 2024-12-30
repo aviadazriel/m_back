@@ -5,3 +5,4 @@ psycopg2-binary==2.9.6
 pydantic==1.10.8
 passlib
 pydantic[email]
+python-jose==3.3.0

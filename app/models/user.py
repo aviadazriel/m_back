@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, text
-from .database import Base
+from app.database import Base
+from sqlalchemy import Column, Integer, String, Text, Date, ARRAY, TIMESTAMP
+
 
 class User(Base):
     __tablename__ = "users"
@@ -16,3 +18,4 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
     updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
+
