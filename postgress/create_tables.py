@@ -53,3 +53,42 @@ VALUES
 -- Add remaining articles similarly
 
 """
+
+
+
+news = """
+CREATE TABLE news (
+    id SERIAL PRIMARY KEY,                  -- Unique identifier for each news item
+    title VARCHAR(255) NOT NULL,            -- Title of the news article
+    link TEXT NOT NULL,                     -- Link to the news article
+    description TEXT NOT NULL,              -- Brief description of the news
+    image_url TEXT,                         -- URL of the news image
+    source VARCHAR(100),                    -- Source of the news (e.g., Calcalist, Globes)
+    publish_date DATE NOT NULL,             -- Publish date of the news
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Creation timestamp
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Update timestamp
+);
+
+"""
+
+insert_news = """INSERT INTO news (title, link, description, image_url, source, publish_date)
+VALUES
+('הדירות החדשות בת"א מגיעות במחירים מפתיעים',
+ 'https://www.calcalist.co.il/real-estate/article/r1ens4yzke',
+ 'כתבה מרתקת על מחירי הנדל"ן בתל אביב ושינויים בשוק.',
+ 'https://pic1.calcalist.co.il/picserver3/crop_images/2024/11/06/HJ39gGFb1x/HJ39gGFb1x_0_0_2500_1667_0_x-large.jpg',
+ 'Calcalist',
+ '2024-11-07'),
+('שוק הנדל"ן בתנודתיות: מה צופן העתיד?',
+ 'https://www.calcalist.co.il/investing/article/rjegyri70',
+ 'לקוחות משלמים 70 אלף שקל בשנה לבנק למשכנתא, ולמרות זאת חייבים אותו הסכום.',
+ 'https://pic1.calcalist.co.il/picserver3/crop_images/2023/02/27/rkKfzJ5Rj/rkKfzJ5Rj_1_0_1000_668_0_x-large.jpg',
+ 'Calcalist',
+ '2024-05-19'),
+('תחזיות כלכליות לשוק הדיור בישראל',
+ 'https://www.calcalist.co.il/investing/article/hyb8hnokje',
+ 'שוק הדיור בוער: זינוק של 32% במשכנתאות בספטמבר לעומת הממוצע.',
+ 'https://pic1.calcalist.co.il/picserver3/crop_images/2024/09/05/HkhdvbPnR/HkhdvbPnR_0_0_2000_1333_0_x-large.jpg',
+ 'Calcalist',
+ '2024-10-15');
+"""

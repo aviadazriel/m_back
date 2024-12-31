@@ -3,7 +3,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate
 from fastapi import  HTTPException
 from passlib.context import CryptContext
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_user_by_email(db: Session, email: str):
@@ -18,7 +18,7 @@ def update_user(user_id: int, user: UserCreate, db: Session):
         raise HTTPException(status_code=404, detail="User not found")
     db_user.username = user.username
     db_user.email = user.email
-    db_user.password_hash = pwd_context.hash(user.password)
+    db_user.password_hash = user.password# pwd_context.hash(user.password)
     db_user.first_name = user.first_name
     db_user.last_name = user.last_name
     db_user.profile_image_url = user.profile_image_url
@@ -30,12 +30,12 @@ def update_user(user_id: int, user: UserCreate, db: Session):
 
 def create_user(db: Session, user: UserCreate):
 
-    hashed_password = pwd_context.hash(user.password)
+    # hashed_password = pwd_context.hash(user.password)
     db_user = User(
         username=user.username,
         email=user.email,
         phone=user.phone,
-        password_hash=hashed_password,
+        password_hash=user.password,
         first_name=user.first_name,
         last_name=user.last_name,
         profile_image_url=user.profile_image_url,

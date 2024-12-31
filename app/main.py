@@ -13,18 +13,25 @@
 
 
 
-
-
-
-
-
 from fastapi import FastAPI
-from app.routes import user, article
+from app.routes import user, article, news
 from app.database import Base, engine
+from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize app and database
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001"],  # Allow specific frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI app connected to Neon PostgreSQL"}
@@ -32,3 +39,5 @@ def read_root():
 # Include routes
 app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(article.router, prefix="/articles", tags=["articles"])
+app.include_router(news.router, prefix="/news", tags=["news"])
+
