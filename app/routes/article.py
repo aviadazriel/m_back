@@ -8,7 +8,7 @@ from typing import List
 router = APIRouter()
 
 @router.get("/", response_model=List[ArticleResponse])
-def read_articles(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+def read_articles(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     return get_articles(db, skip=skip, limit=limit)
 
 @router.post("/", response_model=ArticleResponse)
