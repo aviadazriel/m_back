@@ -14,7 +14,7 @@
 
 
 from fastapi import FastAPI
-from app.routes import user, article, news
+from app.routes import user, article, news, chat
 from app.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,7 +25,7 @@ Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],  # Allow specific frontend URL
+    allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Allow specific frontend URL
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -40,4 +40,8 @@ def read_root():
 app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(article.router, prefix="/articles", tags=["articles"])
 app.include_router(news.router, prefix="/news", tags=["news"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
+
+# python -m uvicorn app.main:app --reload
+
 

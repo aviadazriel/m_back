@@ -7,3 +7,5 @@ passlib
 pydantic[email]
 python-jose==3.3.0
 python-multipart
+openai
+python-dotenv

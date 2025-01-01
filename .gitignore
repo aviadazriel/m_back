@@ -1,0 +1,23 @@
+# Byte-compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.ipynb_checkpoints
+
+# Virtual environment
+env/
+venv/
+ENV/
+.venv/
+
+# Test files and logs
+*.log
+coverage/
+.coverage
+.cache
+.pytest_cache/
+
+# Environment variables
+.env
+.env.*
