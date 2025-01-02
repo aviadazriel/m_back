@@ -38,7 +38,7 @@ def read_root():
 
 
 @app.get("/gitchanges")
-def read_root():
+def read_root2():
     return {"message": "gitchanges"}
 
 # Include routes
