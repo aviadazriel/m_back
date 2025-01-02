@@ -36,6 +36,11 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to the FastAPI app connected to Neon PostgreSQL"}
 
+
+@app.get("/gitchanges")
+def read_root():
+    return {"message": "gitchanges"}
+
 # Include routes
 app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(article.router, prefix="/articles", tags=["articles"])
