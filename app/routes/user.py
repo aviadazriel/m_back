@@ -50,8 +50,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_password = hash_password(user.password)
     db.execute(
-        "INSERT INTO users (first_name, last_name, email, password) VALUES (:first_name, :last_name, :email, :password)",
-        {"first_name": user.first_name, "last_name": user.last_name, "email": user.email, "password": hashed_password},
+        "INSERT INTO users (first_name, last_name, email, password, phone) VALUES (:first_name, :last_name, :email, :password, :phone)",
+        {"first_name": user.first_name, "last_name": user.last_name, "email": user.email, "password": hashed_password, "phone": user.phone},
     )
     db.commit()
     db.close()
