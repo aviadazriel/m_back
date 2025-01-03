@@ -14,7 +14,7 @@
 
 
 from fastapi import FastAPI
-from app.routes import user, article, news, chat
+from app.routes import user, article, news, chat, user_manager
 from app.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -37,12 +37,9 @@ def read_root():
     return {"message": "Welcome to the FastAPI app connected to Neon PostgreSQL"}
 
 
-@app.get("/gitchanges")
-def read_root2():
-    return {"message": "gitchanges"}
-
 # Include routes
 app.include_router(user.router, prefix="/users", tags=["users"])
+app.include_router(user_manager.router, prefix="/users_manager", tags=["users"])
 app.include_router(article.router, prefix="/articles", tags=["articles"])
 app.include_router(news.router, prefix="/news", tags=["news"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
