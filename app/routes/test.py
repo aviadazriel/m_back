@@ -6,8 +6,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 thread = client.beta.threads.create()
 import time
 
-assistant_id = "asst_3UsnB7sRTQJwPHljKJBXY5rH"
-
+assistant_id = os.getenv("ASSISTANT_ID")
 
 def get_answer(run, thread):
     while True:
@@ -57,8 +56,3 @@ def send_chat_msg(msg):
     response = get_answer(run, thread)
 
     return response
-
-
-# send_chat_msg("מה זה משכנתא?")
-
-# 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
