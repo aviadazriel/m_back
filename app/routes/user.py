@@ -67,19 +67,6 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
 
 
-@router.get("/me")
-def get_user_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Fetch user details from the database
-    user = db.execute("SELECT id, email, first_name, last_name, phone FROM users WHERE email = :email", {"email": current_user["sub"]}).fetchone()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {
-        "id": user.id,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "phone": user.phone,
-    }
 
 
 
@@ -190,19 +177,33 @@ def reset_password(request: NewPasswordRequest, db: Session = Depends(get_db)):
     return {"message": "Password reset successful"}
 
 
-
 import shutil
 from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
+@router.get("/me")
+def get_user_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == current_user["sub"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "phone": user.phone,
+        # "address": user.address,
+        # "status": user.status,
+        "profile_image": user.profile_image_url,
+    }
 
+from typing import Optional
 
-@router.put("/users/update")
+@router.put("/update")
 async def update_user(
     firstName: str = Form(...),
     lastName: str = Form(...),
-    phone: str = Form(...),
-    address: str = Form(...),
-    status: str = Form(...),
-    profileImage: UploadFile = None,
+        phone: Optional[str] = Form(None),
+        address: Optional[str] = Form(None),
+        status: Optional[str] = Form(None),
+        profileImage: Optional[UploadFile] = None,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -213,14 +214,14 @@ async def update_user(
     user.first_name = firstName
     user.last_name = lastName
     user.phone = phone
-    user.address = address
-    user.status = status
+    # user.address = address
+    # user.status = status
 
     if profileImage:
         image_path = f"uploads/{profileImage.filename}"
         with open(image_path, "wb") as buffer:
             shutil.copyfileobj(profileImage.file, buffer)
-        user.profile_image = image_path
+        user.profile_image_url = image_path
 
     db.commit()
     return {"message": "Profile updated successfully"}
