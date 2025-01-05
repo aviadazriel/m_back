@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 
-from app.configs import  hash_password
 from app.models.user import User
 from app.schemas.user import UserCreate
 from fastapi import  HTTPException
+
+from app.utils.auth import hash_password
 
 
 def get_user_by_email(db: Session, email: str):

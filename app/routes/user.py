@@ -16,6 +16,51 @@ router = APIRouter()
 from app.auth import get_current_user, create_access_token
 
 
+from google.oauth2 import id_token
+from google.auth.transport import requests
+GOOGLE_CLIENT_ID = "1040890287209-6ei904rpmlpsp7m3gs42eietl4e3pn3h.apps.googleusercontent.com"
+
+from pydantic import BaseModel
+
+# Request model to accept the token in the request body
+class GoogleLoginRequest(BaseModel):
+    token: str
+@router.post("/google-login")
+def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
+    try:
+        token = request.token
+        # Verify the Google token
+        id_info = id_token.verify_oauth2_token(token, requests.Request(), GOOGLE_CLIENT_ID)
+        print(id_info)
+
+        # Extract user information
+        email = id_info.get("email")
+        first_name = id_info.get("given_name")
+        last_name = id_info.get("family_name")
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Google account email not found")
+
+        # Check if the user already exists
+        user = db.execute("SELECT * FROM users WHERE email = :email", {"email": email}).fetchone()
+
+        if not user:
+            # Register the user if they don't exist
+            db.execute(
+                "INSERT INTO users (first_name, last_name, email, is_verified) VALUES (:first_name, :last_name, :email, :is_verified)",
+                {"first_name": first_name, "last_name": last_name, "email": email, "is_verified": True},
+            )
+            db.commit()
+
+        # Create a JWT token
+        access_token = create_access_token(data={"sub": email})
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Google token")
+
+
+
 @router.get("/me")
 def get_user_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     # Fetch user details from the database
