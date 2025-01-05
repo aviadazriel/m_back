@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.schemas.user import UserCreate
-from ..models.user import Token
-from ..utils.auth import generate_verification_code, send_verification_code, hash_password, verify_password
+from ..models.user import Token, User
+from ..utils.auth import generate_verification_code, send_verification_code, hash_password, verify_password, \
+    send_reset_email
 
 router = APIRouter()
 
@@ -141,4 +142,85 @@ def verify_phone(phone: str, code: int, db: Session = Depends(get_db)):
 
     return {"message": "Phone number verified successfully"}
 
+import secrets
+from pydantic import BaseModel
 
+class EmailRequest(BaseModel):
+    email: str
+
+reset_tokens = {}
+@router.post("/reset-password")
+def reset_password(request: EmailRequest, db: Session = Depends(get_db)):
+    email = request.email
+    user = db.execute("SELECT * FROM users WHERE email = :email", {"email": email}).fetchone()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+        # Generate a secure token
+    token = secrets.token_urlsafe(32)
+    reset_tokens[token] = user.email
+
+    # Send password reset email
+    # Send the reset link via email
+    reset_link = f"http://localhost:3000/reset-password/{token}"
+    send_reset_email(email, reset_link)
+    return {"message": "Password reset link sent to your email"}
+
+class NewPasswordRequest(BaseModel):
+    new_password: str
+    token: str
+# Reset the password using the token
+@router.post("/reset-new-password")
+def reset_password(request: NewPasswordRequest, db: Session = Depends(get_db)):
+    email = reset_tokens.get(request.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    # Find the user by email and update the password
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password = hash_password(request.new_password)
+    db.commit()
+
+    # Remove the token from the store
+    del reset_tokens[request.token]
+
+    return {"message": "Password reset successful"}
+
+
+
+import shutil
+from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
+
+
+@router.put("/users/update")
+async def update_user(
+    firstName: str = Form(...),
+    lastName: str = Form(...),
+    phone: str = Form(...),
+    address: str = Form(...),
+    status: str = Form(...),
+    profileImage: UploadFile = None,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == current_user["sub"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.first_name = firstName
+    user.last_name = lastName
+    user.phone = phone
+    user.address = address
+    user.status = status
+
+    if profileImage:
+        image_path = f"uploads/{profileImage.filename}"
+        with open(image_path, "wb") as buffer:
+            shutil.copyfileobj(profileImage.file, buffer)
+        user.profile_image = image_path
+
+    db.commit()
+    return {"message": "Profile updated successfully"}

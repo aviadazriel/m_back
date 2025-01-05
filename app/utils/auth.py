@@ -14,6 +14,22 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
+def send_reset_email(email: str, reset_link:str):
+    msg = MIMEText(f"Click the link to reset your password: {reset_link}")
+    msg["Subject"] = "Password Reset"
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = email
+    try:
+        with smtplib.SMTP(EMAIL_SERVER, EMAIL_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+            server.quit()
+
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        raise HTTPException(status_code=500)
+
 def send_verification_code(email, name, verification_code):
     # Set up the email message
     msg = MIMEMultipart()
