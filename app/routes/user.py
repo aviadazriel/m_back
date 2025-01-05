@@ -36,7 +36,7 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         # Extract user information
         email = id_info.get("email")
         first_name = id_info.get("given_name")
-        last_name = id_info.get("family_name")
+        last_name = id_info.get("family_name", "")
 
         if not email:
             raise HTTPException(status_code=400, detail="Google account email not found")
@@ -45,11 +45,16 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         user = db.execute("SELECT * FROM users WHERE email = :email", {"email": email}).fetchone()
 
         if not user:
-            # Register the user if they don't exist
             db.execute(
-                "INSERT INTO users (first_name, last_name, email, is_verified) VALUES (:first_name, :last_name, :email, :is_verified)",
-                {"first_name": first_name, "last_name": last_name, "email": email, "is_verified": True},
+                "INSERT INTO users (first_name, last_name, email, google_id, is_google_user, is_verified) VALUES (:first_name, :last_name, :email, :google_id, :is_google_user, :is_verified)",
+                {"first_name": first_name, "last_name": last_name, "email": email, "google_id": id_info.get("sub"), "is_google_user": True, "is_verified": True},
             )
+
+            # Register the user if they don't exist
+            # db.execute(
+            #     "INSERT INTO users (first_name, last_name, email, is_verified) VALUES (:first_name, :last_name, :email, :is_verified)",
+            #     {"first_name": first_name, "last_name": last_name, "email": email, "is_verified": True},
+            # )
             db.commit()
 
         # Create a JWT token
