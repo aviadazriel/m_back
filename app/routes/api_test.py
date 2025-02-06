@@ -8,7 +8,9 @@ from fastapi import FastAPI, File, UploadFile, Form
 router = APIRouter()
 
 
-
+@router.get("/")
+def test_api():
+    return 'THIS IS A TEST METHOD'
 
 @router.post("/")
 async def send_email(
