@@ -19,13 +19,14 @@ from app.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize app and database
-app = FastAPI()
+app = FastAPI(redirect_slashes=False)
 Base.metadata.create_all(bind=engine)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Allow specific frontend URL
+    # allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Allow specific frontend URL
+allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
