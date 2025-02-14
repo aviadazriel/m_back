@@ -19,6 +19,36 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from datetime import datetime, timedelta
+
+
+# -- הגדרות בסיסיות ל-DB (PostgreSQL)
+metadata = MetaData(bind=engine)
+
+# -- הגדרת הטבלאות ב-SQLAlchemy (אפשר גם ב-ORM מלא, כאן דוגמה בטאבלת Metadata)
+users_table = Table(
+    "users", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("email", String, unique=True, nullable=False),
+    Column("phone", String, unique=True, nullable=False),
+    Column("password", String),
+    Column("first_name", String),
+    Column("last_name", String),
+    Column("is_verified", Boolean, default=False),
+)
+
+sessions_table = Table(
+    "sessions", metadata,
+    Column("session_id", PG_UUID(as_uuid=True), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    Column("created_at", DateTime, nullable=False, default=datetime.utcnow),
+    Column("expires_at", DateTime),
+    Column("data", JSONB),
+)
+
+
 # Dependency for database session
 def get_db():
     db = SessionLocal()

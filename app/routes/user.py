@@ -6,11 +6,25 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.database import get_db, sessions_table
 from app.schemas.user import UserCreate
 from ..models.user import Token, User
 from ..utils.auth import generate_verification_code, send_verification_code, hash_password, verify_password, \
-    send_reset_email
+    send_reset_email, set_session_id
+
+import uuid
+from datetime import datetime, timedelta
+
+from fastapi import FastAPI, Depends, Request, Response, HTTPException, Cookie
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.sql import select, insert, delete
+from sqlalchemy.orm import sessionmaker
+from passlib.hash import bcrypt
+
+
 
 router = APIRouter()
 
@@ -26,8 +40,34 @@ from pydantic import BaseModel
 # Request model to accept the token in the request body
 class GoogleLoginRequest(BaseModel):
     token: str
+
+
+
+
+
+
+
+
+
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserCreate(BaseModel):
+    email: str
+    phone: str
+    password: str
+    first_name: str
+    last_name: str
+
+
+
+
+
 @router.post("/google-login")
-def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
+def google_login(request: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)):
     try:
         token = request.token
         # Verify the Google token
@@ -57,10 +97,27 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             #     {"first_name": first_name, "last_name": last_name, "email": email, "is_verified": True},
             # )
             db.commit()
+        session_id = set_session_id(db, user.id)
+        db.close()
 
-        # Create a JWT token
-        access_token = create_access_token(data={"sub": email})
-        return {"access_token": access_token, "token_type": "bearer"}
+        # 6) הגדרת ה-Cookie בתגובה
+        # בדוגמה הבסיסית - httpOnly = False כדי שאפשר לראות ולבדוק; בסט-אפ ייצור תרצה True
+        response.set_cookie(
+            key="session_id",
+            value=str(session_id),
+            httponly=True,  # להגנה מפני XSS
+            max_age=10800,  # 3 שעות
+            # samesite="lax",  # או strict
+            samesite="none",
+            secure=False  # בפרודקשן רצוי True אם HTTPS
+        )
+
+        return {"message": "Logged in successfully"}
+
+        # # Create a JWT token
+        # access_token = create_access_token(data={"sub": email})
+        # return {"access_token": access_token, "token_type": "bearer"}
+
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid Google token")
@@ -68,16 +125,18 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
 
 
-
-
-# # todo: build it better
+# , response_model=Token
 # # Routes
-@router.post("/register", response_model=Token)
+@router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.execute("SELECT * FROM users WHERE email = :email", {"email": user.email}).fetchone()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="אימייל קיים במערכת")
 
+    existing_user_phone = db.execute("SELECT * FROM users WHERE phone = :phone", {"phone": user.phone}).fetchone()
+    if existing_user_phone:
+        raise HTTPException(status_code=400, detail="מספר הטלפון כבר קיים במערכת")
+    #
     # Generate a verification code
     verification_code = generate_verification_code()
 
@@ -93,24 +152,46 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.close()
 
     send_verification_code(user.email, f"{user.first_name} {user.last_name}", verification_code)
+    return {"info": "send_verification_code"}
+    # access_token = create_access_token(data={"sub": user.email})
+    # return {"access_token": access_token, "token_type": "bearer"}
 
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    print(form_data.__dict__)
-    print(form_data.username)
-    user = db.execute("SELECT * FROM users WHERE email = :email", {"email": form_data.username}).fetchone()
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
-    if not user or not verify_password(form_data.password, user.password):
+@router.post("/login") #, response_model=Token
+def login(request: LoginRequest, response: Response,  db: Session = Depends(get_db)):
+    print(request.email)
+    user = db.execute("SELECT * FROM users WHERE email = :email", {"email": request.email}).fetchone()
+
+    if not user or not verify_password(request.password, user.password):
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
     if not user.is_verified:
         raise HTTPException(status_code=400, detail="Phone number not verified")
-    access_token = create_access_token(data={"sub": user.email})
+    # access_token = create_access_token(data={"sub": user.email})
+
+    session_id = set_session_id(db, user.id)
     db.close()
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # 6) הגדרת ה-Cookie בתגובה
+    # בדוגמה הבסיסית - httpOnly = False כדי שאפשר לראות ולבדוק; בסט-אפ ייצור תרצה True
+    response.set_cookie(
+        key="session_id",
+        value=str(session_id),
+        httponly=True,  # להגנה מפני XSS
+        max_age=10800,  # 3 שעות
+        samesite="lax",  # או strict  #todo:lax   none
+        secure=True  # בפרודקשן רצוי True אם HTTPS #todo
+    )
+
+
+    return {"message": "Logged in successfully"}
+
+
+    # return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/verify-phone")
@@ -180,18 +261,18 @@ def reset_password(request: NewPasswordRequest, db: Session = Depends(get_db)):
 import shutil
 from fastapi import APIRouter, Depends, UploadFile, Form, HTTPException
 @router.get("/me")
-def get_user_details(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == current_user["sub"]).first()
-    if not user:
+def get_user_details(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
+    # user = db.query(User).filter(User.email == current_user["sub"]).first()
+    if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
     return {
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "phone": user.phone,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "email": current_user.email,
+        "phone": current_user.phone,
         # "address": user.address,
         # "status": user.status,
-        "profile_image": user.profile_image_url,
+        # "profile_image": current_user.profile_image_url,
     }
 
 from typing import Optional
@@ -225,3 +306,33 @@ async def update_user(
 
     db.commit()
     return {"message": "Profile updated successfully"}
+
+
+
+
+
+# -----------------------------------------------------
+# נתיב שמחייב משתמש מחובר
+# -----------------------------------------------------
+@router.get("/protected")
+def protected_route(current_user=Depends(get_current_user)):
+    return {
+        "message": "You are in a protected route",
+        "user_id": current_user.id,
+        "email": current_user.email,
+    }
+
+# -----------------------------------------------------
+# LOGOUT
+# -----------------------------------------------------
+@router.post("/logout")
+def logout(request: Request, response: Response, db=Depends(get_db), current_user=Depends(get_current_user)):
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        db.execute(delete(sessions_table).where(sessions_table.c.session_id == session_id))
+        db.commit()
+
+        # מוחקים/מרוקנים את העוגייה
+        response.delete_cookie("session_id")
+
+    return {"message": "Logged out successfully"}

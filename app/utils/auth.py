@@ -3,6 +3,7 @@ from fastapi import  HTTPException
 
 # Generate a random 6-digit verification code
 from app.configs import EMAIL_ADDRESS, EMAIL_PASSWORD, EMAIL_PORT, EMAIL_SERVER
+from app.database import sessions_table
 
 
 def generate_verification_code():
@@ -70,3 +71,28 @@ def verify_password(plain_password, hashed_password):
 
 def hash_password(password):
     return pwd_context.hash(password)
+
+from fastapi import HTTPException
+
+from sqlalchemy.sql import select, insert, delete
+
+import uuid
+from datetime import datetime, timedelta
+def set_session_id(db, user_id):
+    # 3) יצירת session_id
+    session_id = uuid.uuid4()
+
+    # 4) קביעת תפוגה (אופציונלי)
+    expires_at = datetime.utcnow() + timedelta(hours=3)  # למשל סשן ל-3 שעות
+
+    # 5) החדרת רשומה לטבלת sessions
+    ins_sess = insert(sessions_table).values(
+        session_id=session_id,
+        user_id=user_id,
+        created_at=datetime.utcnow(),
+        expires_at=expires_at,
+        data={}  # אפשר לשים פה הרשאות וכדומה
+    )
+    db.execute(ins_sess)
+    db.commit()
+    return session_id

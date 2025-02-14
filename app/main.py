@@ -26,11 +26,16 @@ Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Allow specific frontend URL
-allow_origins=["*"],
+allow_origins=["http://localhost:3000", "http://127.0.0.1:3000",
+               "https://mashkanta.netlify.app", "http://mashkanta-me.com", "https://mashkanta-me.com"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+# Access-Control-Allow-Origin: https://mashkanta.netlify.app
+# Access-Control-Allow-Methods: POST, OPTIONS
+# Access-Control-Allow-Headers: Content-Type
 
 
 @app.get("/")
