@@ -97,6 +97,8 @@ def google_login(request: GoogleLoginRequest, response: Response, db: Session = 
             #     {"first_name": first_name, "last_name": last_name, "email": email, "is_verified": True},
             # )
             db.commit()
+
+
         session_id = set_session_id(db, user.id)
         db.close()
 
@@ -108,8 +110,8 @@ def google_login(request: GoogleLoginRequest, response: Response, db: Session = 
             httponly=True,  # להגנה מפני XSS
             max_age=10800,  # 3 שעות
             # samesite="lax",  # או strict
-            samesite="none",
-            secure=False  # בפרודקשן רצוי True אם HTTPS
+            samesite="None",
+            secure=True  # בפרודקשן רצוי True אם HTTPS
         )
 
         return {"message": "Logged in successfully"}
@@ -183,7 +185,7 @@ def login(request: LoginRequest, response: Response,  db: Session = Depends(get_
         value=str(session_id),
         httponly=True,  # להגנה מפני XSS
         max_age=10800,  # 3 שעות
-        samesite="lax",  # או strict  #todo:lax   none
+        samesite="None",  # או strict  #todo:lax   none
         secure=True  # בפרודקשן רצוי True אם HTTPS #todo
     )
 
