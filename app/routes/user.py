@@ -126,6 +126,19 @@ def google_login(request: GoogleLoginRequest, response: Response, db: Session = 
 
 
 
+import re
+
+def validate_phone_number(phone):
+    """
+    Validates if the input phone number is exactly 10 digits.
+    """
+    pattern = r"^\d{10}$"  # Regex for exactly 10 digits
+    if re.fullmatch(pattern, phone):
+        return True, "Valid phone number."
+    else:
+        return False, "מספר הטלפון לא בפורמט הנכון (שימו לב לכמות הספרות וללא סימנים מיוחדים)"
+
+
 
 # , response_model=Token
 # # Routes
@@ -134,6 +147,10 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.execute("SELECT * FROM users WHERE email = :email", {"email": user.email}).fetchone()
     if existing_user:
         raise HTTPException(status_code=400, detail="אימייל קיים במערכת")
+    is_valid, message = validate_phone_number(user.phone)
+    if not user.phone or not is_valid:
+
+        raise HTTPException(status_code=400, detail=message)
 
     existing_user_phone = db.execute("SELECT * FROM users WHERE phone = :phone", {"phone": user.phone}).fetchone()
     if existing_user_phone:
@@ -328,7 +345,7 @@ def protected_route(current_user=Depends(get_current_user)):
 # LOGOUT
 # -----------------------------------------------------
 @router.post("/logout")
-def logout(request: Request, response: Response, db=Depends(get_db), current_user=Depends(get_current_user)):
+def logout(request: Request, response: Response, db=Depends(get_db)):
     session_id = request.cookies.get("session_id")
     if session_id:
         db.execute(delete(sessions_table).where(sessions_table.c.session_id == session_id))
