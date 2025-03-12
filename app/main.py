@@ -12,8 +12,8 @@
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+from fastapi import FastAPI, Request, Response
 
-from fastapi import FastAPI
 from app.routes import user, article, news, chat, user_manager, api_test
 from app.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +26,7 @@ Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Allow specific frontend URL
-allow_origins=["http://localhost:3000", "http://127.0.0.1:3000",
+allow_origins=["http://localhost:3000", "http://127.0.0.1:3000","http://localhost:3001", "http://127.0.0.1:3001",
                "https://mashkanta.netlify.app", "http://mashkanta-me.com", "https://mashkanta-me.com"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
@@ -42,6 +42,13 @@ allow_origins=["http://localhost:3000", "http://127.0.0.1:3000",
 def read_root():
     return {"message": "Welcome to the FastAPI app connected to Neon PostgreSQL"}
 
+# Custom middleware to add the COOP header
+@app.middleware("http")
+async def add_coop_header(request: Request, call_next):
+    response: Response = await call_next(request)
+    # Setting COOP to allow popups to communicate via window.postMessage.
+    response.headers['Cross-Origin-Opener-Policy'] = "same-origin-allow-popups"
+    return response
 
 # Include routes
 app.include_router(user.router, prefix="/users", tags=["users"])
